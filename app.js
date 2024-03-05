@@ -2,8 +2,10 @@ const express = require('express');
 const bodyParser = require('body-parser');
 var fyersModel = require("fyers-api-v3").fyersModel;
 let DataSocket = require("fyers-api-v3").fyersDataSocket;
+var fyersOrderSocket = require("fyers-api-v3").fyersOrderSocket;
 const axios = require('axios');
 var fyers = new fyersModel({ "logs": "path where you want to save logs", "enableLogging": false })
+
 
 // Create an Express application
 const app = express();
@@ -27,7 +29,7 @@ let Btradevalue = 0;
 let BCurrentTrade = '';
 let BTradeLossper = 0;
 let BAbsoluteLoss = 0;
-let BTradex = 0;
+let BTradex = 1;
 let BLastCEValue = 0;
 let BLastPEValue = 0;
 fyers.setAppId("P0LFBDKNAW-100")
@@ -36,9 +38,20 @@ var accesstoken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhcGkuZnllcnMu
 
 
 fyers.setAccessToken(accesstoken);
+var sktorders = new fyersOrderSocket(accesstoken,);
 var skt = DataSocket.getInstance(accesstoken,)
+
+var orderDetails = {
+    symbol: 'NSE:RELIANCE',  // Example symbol (Reliance)
+    qty: 1,
+    type: 'LIMIT',
+    side: 'BUY',
+    productType: 'INTRADAY',
+    limitPrice: 1000  // Example limit price
+};
+
 skt.on("connect", function () {
-    
+
     skt.mode(skt.LiteMode);
     console.log('skt connected');
 });
@@ -47,7 +60,7 @@ skt.on("connect", function () {
 
 // Define a route handler for handling POST requests
 app.post('/submit-form', (req, res) => {
-    
+
     // Extract data from the request body
     const formData = req.body;
     console.log('Received: ', formData);
@@ -58,7 +71,23 @@ app.post('/submit-form', (req, res) => {
         if (BCurrentTrade == 'CE' && Btradevalue != 0) {
             BTradeLossper = BTradeLossper - (((Btradevalue - BLastCEValue) / Btradevalue) * 100);
             BAbsoluteLoss = BAbsoluteLoss - (((Btradevalue - BLastCEValue) / Btradevalue) * 100 * Math.pow(2, (BTradex + 1)));
-            console.log('Exit CE Trade@', BLastCEValue + 0.5, ':', BTradeLossper);
+            console.log('Exit CE Trade@', BLastCEValue - 0.5, ':', BTradeLossper);
+            orderDetails = {
+                symbol: BNiftyCE,  // Example symbol (Reliance)
+                qty: (15 * BTradex),
+                type: 'LIMIT',
+                side: 'SELL',
+                productType: 'INTRADAY',
+                limitPrice: BLastCEValue - 0.5  // Example limit price
+            };                        
+            sktorders.placeOrder(orderDetails)
+                .then(response => {
+                    console.log('Order placed successfully:', response);
+                })
+                .catch(error => {
+                    console.error('Error placing order:', error);
+                });
+
             BCurrentTrade = '';
             Btradeside = '';
             Btradevalue = 0;
@@ -69,7 +98,22 @@ app.post('/submit-form', (req, res) => {
         if (BCurrentTrade == 'PE' && Btradevalue != 0) {
             BTradeLossper = BTradeLossper - (((Btradevalue - BLastPEValue) / Btradevalue) * 100);
             BAbsoluteLoss = BAbsoluteLoss - (((Btradevalue - BLastPEValue) / Btradevalue) * 100 * Math.pow(2, (BTradex + 1)));
-            console.log('Exit PE Trade@', BLastPEValue + 0.5, ':', BTradeLossper);
+            console.log('Exit PE Trade@', BLastPEValue - 0.5, ':', BTradeLossper);
+            orderDetails = {
+                symbol: BNiftyPE,  // Example symbol (Reliance)
+                qty: (15 * BTradex),
+                type: 'LIMIT',
+                side: 'SELL',
+                productType: 'INTRADAY',
+                limitPrice: BLastPEValue - 0.5  // Example limit price
+            };                        
+            sktorders.placeOrder(orderDetails)
+                .then(response => {
+                    console.log('Order placed successfully:', response);
+                })
+                .catch(error => {
+                    console.error('Error placing order:', error);
+                });
             BCurrentTrade = '';
             Btradeside = '';
             Btradevalue = 0;
@@ -85,7 +129,7 @@ app.post('/submit-form', (req, res) => {
         console.log('Higher / lower is ', higherindex, '/', lowerindex);
         textreceived = '';
     } else {
-        if (subscribeList.length != 0){ // Sprofit booked next data received
+        if (subscribeList.length != 0) { // Sprofit booked next data received
             subscribeList.pop(BNiftyPE);
             subscribeList.pop(BNiftyCE);
             BTagsReceivedState = false;
@@ -96,7 +140,13 @@ app.post('/submit-form', (req, res) => {
             lowerindex = textreceived.slice(textindex + 2, textreceived.length);
             console.log('Higher / lower is ', higherindex, '/', lowerindex);
             textreceived = '';
-        } else{//First Time
+            BCurrentTrade = '';
+            Btradeside = '';
+            Btradevalue = 0;
+            BTradex = 0;
+            BTradeLossper = 0;
+            BAbsoluteLoss = 0;
+        } else {//First Time
             subscribeList.push('NSE:NIFTYBANK-INDEX');
             skt.subscribe(subscribeList);
             textreceived = formData;
@@ -132,32 +182,23 @@ skt.on("message", function (message) {
     //console.log('Reached here1',subscribeList, textreceived);
 
     if (textreceived == 'WAITFORDATA') {
-        subscribeList.pop(BNiftyPE);
-        subscribeList.pop(BNiftyCE);
-        BTagsReceivedState = false;
-        BCurrentTrade = '';
-        Btradeside = '';
-        Btradevalue = 0;
-        BTradex = 0;
-        BTradeLossper = 0;
-        BAbsoluteLoss = 0;
-
+        console.log('I am Waiting');
     } else {
-        if(textreceived != ''){//Trade
+        if (textreceived != '') {//Trade
             //console.log('INTRADE');
             switch (message.symbol) {
                 case 'NSE:NIFTYBANK-INDEX':
                     if (message.ltp > higherindex) {
-                        if (Btradeside == 'PE'){
+                        if (Btradeside == 'PE') {
                             Btradeside = 'CE';
                             BtradeDirection = 'BUY';
                             console.log('Triggered CE @', message.ltp);
                             textreceived = 'TRADE';
                         }
                     }
-    
+
                     if (message.ltp < lowerindex) {
-                        if (Btradeside == 'CE'){
+                        if (Btradeside == 'CE') {
                             Btradeside = 'PE';
                             BtradeDirection = 'BUY';
                             console.log('Triggered PE @', message.ltp);
@@ -167,7 +208,7 @@ skt.on("message", function (message) {
                     //console.log('Checking Index @', message.ltp);                  
                     break;
 
-                case BNiftyCE :
+                case BNiftyCE:
                     BLastCEValue = message.ltp;
                     if (Btradeside == 'CE') {
                         if (BCurrentTrade == '' && Btradevalue == 0) {
@@ -175,8 +216,23 @@ skt.on("message", function (message) {
                                 ++BTradex;
                                 console.log('Take trade CE @', message.ltp, 'Capital : ', BTradex);
                             } else {
-                                console.log('Take trade CE @', message.ltp, 'Capital : ', BTradex);
+                                console.log('Take trade CE @', message.ltp, 'Capital : ', BTradex);                                
                             }
+                            orderDetails = {
+                                symbol: BNiftyCE,  // Example symbol (Reliance)
+                                qty: (15 * BTradex),
+                                type: 'LIMIT',
+                                side: 'BUY',
+                                productType: 'INTRADAY',
+                                limitPrice: message.ltp + 0.5  // Example limit price
+                            };                        
+                            sktorders.placeOrder(orderDetails)
+                                .then(response => {
+                                    console.log('Order placed successfully:', response);
+                                })
+                                .catch(error => {
+                                    console.error('Error placing order:', error);
+                                });
                             Btradevalue = message.ltp;
                             BCurrentTrade = 'CE';
                         } else {
@@ -190,6 +246,21 @@ skt.on("message", function (message) {
                                         Btradeside = 'EXITCE';
                                         //skt.close();
                                         textreceived = 'WAITFORDATA';
+                                        orderDetails = {
+                                            symbol: BNiftyCE,  // Example symbol (Reliance)
+                                            qty: (15 * BTradex),
+                                            type: 'LIMIT',
+                                            side: 'SELL',
+                                            productType: 'INTRADAY',
+                                            limitPrice: message.ltp - 0.5  // Example limit price
+                                        };                        
+                                        sktorders.placeOrder(orderDetails)
+                                            .then(response => {
+                                                console.log('Order placed successfully:', response);
+                                            })
+                                            .catch(error => {
+                                                console.error('Error placing order:', error);
+                                            });
                                     }
                                 }
                             } else {
@@ -203,7 +274,7 @@ skt.on("message", function (message) {
                     }
                     if (Btradeside == 'PE') {
                         if (BCurrentTrade == 'CE' && Btradevalue != 0) {
-    
+
                             if (Btradevalue > message.ltp) {
                                 BTradeLossper = BTradeLossper - (((Btradevalue - message.ltp) / Btradevalue) * 100);
                                 BAbsoluteLoss = BAbsoluteLoss - (((Btradevalue - message.ltp) / Btradevalue) * 100 * Math.pow(2, (BTradex + 1)));
@@ -212,12 +283,26 @@ skt.on("message", function (message) {
                                 BTradeLossper = BTradeLossper + (((message.ltp - Btradevalue) / Btradevalue) * 100);
                                 console.log('Exit CE PROFIT Trade@', message.ltp, ':', BTradeLossper);
                             }
-    
+                            orderDetails = {
+                                symbol: BNiftyCE,  // Example symbol (Reliance)
+                                qty: (15 * BTradex),
+                                type: 'LIMIT',
+                                side: 'SELL',
+                                productType: 'INTRADAY',
+                                limitPrice: message.ltp - 0.5  // Example limit price
+                            };                        
+                            sktorders.placeOrder(orderDetails)
+                                .then(response => {
+                                    console.log('Order placed successfully:', response);
+                                })
+                                .catch(error => {
+                                    console.error('Error placing order:', error);
+                                });
                             Btradevalue = 0;
                         }
                     }
                     break;
-                case BNiftyPE :
+                case BNiftyPE:
                     //console.log('Reached here7', message.ltp);
                     BLastPEValue = message.ltp;
                     if (Btradeside == 'PE') {
@@ -228,6 +313,21 @@ skt.on("message", function (message) {
                             } else {
                                 console.log('Take trade PE @', message.ltp, 'Capital : ', Tradex);
                             }
+                            orderDetails = {
+                                symbol: BNiftyPE,  // Example symbol (Reliance)
+                                qty: (15 * BTradex),
+                                type: 'LIMIT',
+                                side: 'BUY',
+                                productType: 'INTRADAY',
+                                limitPrice: message.ltp + 0.5  // Example limit price
+                            };                        
+                            sktorders.placeOrder(orderDetails)
+                                .then(response => {
+                                    console.log('Order placed successfully:', response);
+                                })
+                                .catch(error => {
+                                    console.error('Error placing order:', error);
+                                });
                             Btradevalue = message.ltp;
                             BCurrentTrade = 'PE';
                         } else {
@@ -241,10 +341,25 @@ skt.on("message", function (message) {
                                         tradeside = 'EXITPE';
                                         //skt.close();
                                         textreceived = 'WAITFORDATA';
+                                        orderDetails = {
+                                            symbol: BNiftyPE,  // Example symbol (Reliance)
+                                            qty: (15 * BTradex),
+                                            type: 'LIMIT',
+                                            side: 'SELL',
+                                            productType: 'INTRADAY',
+                                            limitPrice: message.ltp - 0.5  // Example limit price
+                                        };                        
+                                        sktorders.placeOrder(orderDetails)
+                                            .then(response => {
+                                                console.log('Order placed successfully:', response);
+                                            })
+                                            .catch(error => {
+                                                console.error('Error placing order:', error);
+                                            });
                                     }
                                 }
-    
-    
+
+
                             } else {
                                 if (BCurrentTrade == 'CE' && Btradevalue == 0) {
                                     console.log('Take Switchtrade PE @', message.ltp);
@@ -256,7 +371,7 @@ skt.on("message", function (message) {
                     }
                     if (Btradeside == 'CE') {
                         if (BCurrentTrade == 'PE' && Btradevalue != 0) {
-    
+
                             if (Btradevalue > message.ltp) {
                                 BTradeLossper = BTradeLossper - (((Btradevalue - message.ltp) / Btradevalue) * 100);
                                 BAbsoluteLoss = BAbsoluteLoss - (((Btradevalue - message.ltp) / Btradevalue) * 100 * Math.pow(2, (BTradex + 1)));
@@ -265,14 +380,29 @@ skt.on("message", function (message) {
                                 TradeLossper = TradeLossper + (((message.ltp - Btradevalue) / Btradevalue) * 100);
                                 console.log('Exit PE PROFIT Trade@', message.ltp, ':', BTradeLossper);
                             }
+                            orderDetails = {
+                                symbol: BNiftyPE,  // Example symbol (Reliance)
+                                qty: (15 * BTradex),
+                                type: 'LIMIT',
+                                side: 'SELL',
+                                productType: 'INTRADAY',
+                                limitPrice: message.ltp - 0.5  // Example limit price
+                            };                        
+                            sktorders.placeOrder(orderDetails)
+                                .then(response => {
+                                    console.log('Order placed successfully:', response);
+                                })
+                                .catch(error => {
+                                    console.error('Error placing order:', error);
+                                });
                             Btradevalue = 0;
                         }
                     }
-    
+
                     break;
-    
+
             }
-        }else{
+        } else {
             switch (message.symbol) {
                 case 'NSE:NIFTYBANK-INDEX':
                     //console.log('reached here', message.ltp);
@@ -287,14 +417,14 @@ skt.on("message", function (message) {
                             //console.log('Inside ', subscribeList);
                         });
                         BTagsReceivedState = true;
-    
+
                     } else {
-                        if(subscribeList.length != 0){
+                        if (subscribeList.length != 0) {
                             if (message.ltp > higherindex) {
                                 Btradeside = 'CE';
                                 BtradeDirection = 'BUY';
                             }
-        
+
                             if (message.ltp < lowerindex) {
                                 Btradeside = 'PE';
                                 BtradeDirection = 'BUY';
@@ -303,22 +433,52 @@ skt.on("message", function (message) {
                         //console.log('Checking Index @', message.ltp);
                     }
                     break;
-                case BNiftyCE :
-                    if (Btradeside == 'CE'){
+                case BNiftyCE:
+                    if (Btradeside == 'CE') {
                         console.log('First Trade - Triggered CE @', message.ltp);
-                        BCurrentTrade = 'CE'; 
+                        BCurrentTrade = 'CE';
                         Btradevalue = message.ltp;
                         textreceived = 'TRADE';
+                        orderDetails = {
+                            symbol: BNiftyCE,  // Example symbol (Reliance)
+                            qty: 15,
+                            type: 'LIMIT',
+                            side: 'BUY',
+                            productType: 'INTRADAY',
+                            limitPrice: message.ltp + 0.5  // Example limit price
+                        };                        
+                        sktorders.placeOrder(orderDetails)
+                            .then(response => {
+                                console.log('Order placed successfully:', response);
+                            })
+                            .catch(error => {
+                                console.error('Error placing order:', error);
+                            });
                     }
-                break;
-                case BNiftyPE :
-                    if (Btradeside == 'PE'){
+                    break;
+                case BNiftyPE:
+                    if (Btradeside == 'PE') {
                         console.log('First Trade - Triggered PE @', message.ltp);
-                        BCurrentTrade = 'PE'; 
+                        BCurrentTrade = 'PE';
                         Btradevalue = message.ltp;
                         textreceived = 'TRADE';
+                        orderDetails = {
+                            symbol: BNiftyPE,  // Example symbol (Reliance)
+                            qty: 15,
+                            type: 'LIMIT',
+                            side: 'BUY',
+                            productType: 'INTRADAY',
+                            limitPrice: message.ltp + 0.5  // Example limit price
+                        };                        
+                        sktorders.placeOrder(orderDetails)
+                            .then(response => {
+                                console.log('Order placed successfully:', response);
+                            })
+                            .catch(error => {
+                                console.error('Error placing order:', error);
+                            });
                     }
-                break;
+                    break;
             }
         }
 
