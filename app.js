@@ -22,6 +22,22 @@ const client = Binance({
   apiSecret: apiSecret,
 });
 
+client.time().then(time => console.log(`Server time: ${time}`));
+
+// Base URL for Binance Futures API
+const BASE_URL = 'https://fapi.binance.com';
+
+// Function to get market price of a symbol
+async function getTickerPrice(symbol) {
+    try {
+      const response = await axios.get(`${BASE_URL}/fapi/v1/ticker/price`, {
+        params: { symbol: symbol }
+      });
+      console.log(`Price of ${symbol}:`, response.data);
+    } catch (error) {
+      console.error(`Error fetching price for ${symbol}:`, error);
+    }
+  }
 
 //working
 //   const { USDMClient } = require('binance');
@@ -93,32 +109,49 @@ async function fetchBTCUSDTPrice() {
         firstBTCPrice = prices.BTCUSDT;
       }
       if(currentTrade == 'BUY'){
-        if (intervalIdS != 0){
-            clearInterval(intervalIdS);
-            intervalIdS = 0;
-        }
+        // if (intervalIdS != 0){
+        //     clearInterval(intervalIdS);
+        //     intervalIdS = 0;
+        // }
         
         if ((prices.BTCUSDT - firstBTCPrice) > 100){
             console.log('Exit BUY Trade with profit');
             firstBTCPrice = 0;
+            clearInterval(intervalIdS);
+            const resultBUY = await client.futuresOrder({
+              symbol: 'BTCUSDT',
+              side: 'SELL',
+              type: 'MARKET',
+              quantity:  0.002
+            });
+            currentTrade = '';
             
         } else{
-            console.log(`The current price of BTC/USDT is: ${prices.BTCUSDT}`, `BUY Profit is : ${(prices.BTCUSDT - firstBTCPrice)}`);
+            console.log(`The current price of BTC/USDT is: ${Number(prices.BTCUSDT).toFixed(2)}`, `BUY Profit is : ${Number(prices.BTCUSDT - firstBTCPrice).toFixed(2)}`);
         }
         
       }
 
       if (currentTrade == 'SELL'){
-        if (intervalIdB != 0){
-            clearInterval(intervalIdB);
-            intervalIdB = 0;
-        }
+        // if (intervalIdB != 0){
+        //     clearInterval(intervalIdB);
+        //     intervalIdB = 0;
+        // }
         if ((firstBTCPrice - prices.BTCUSDT) > 100){
             console.log('Exit SELL Trade with profit');
             firstBTCPrice = 0;
+
+            clearInterval(intervalIdB);
+            const resultSELL = await client.futuresOrder({
+              symbol: 'BTCUSDT',
+              side: 'BUY',
+              type: 'MARKET',
+              quantity:  0.002
+            });
+          currentTrade = '';
             
         } else{
-            console.log(`The current price of BTC/USDT is: ${prices.BTCUSDT}`, `SELL Profit is : ${(firstBTCPrice - prices.BTCUSDT)}`);
+            console.log(`The current price of BTC/USDT is: ${Number(prices.BTCUSDT).toFixed(2)}`, `SELL Profit is : ${Number(firstBTCPrice - prices.BTCUSDT).toFixed(2)}`);
         }
         
       }
@@ -151,39 +184,50 @@ app.post('/submit-form', async (req, res) => {
     console.log('command:', inputString.split(' ')[0], '/', ' value :', inputString.slice(-8));
     switch (inputString.split(' ')[0]){
         case 'BUY':
-            // const resultBUY = await client.submitNewOrder({
-            //     side: 'BUY',
-            //     symbol: 'BTCUSDT',
-            //     type: 'MARKET',
-            //     quantity: 0.001,
-            //     // newOrderRespType: 'FULL',
-            //   });
-
-              const resultBUY = await client.order({
+            if (currentTrade == ''){
+              const resultBUYFirst = await client.futuresOrder({
                 symbol: 'BTCUSDT',
                 side: 'BUY',
                 type: 'MARKET',
-                quantity:  0.001
+                quantity:  0.002
               });
+            }else{
+              clearInterval(intervalIdS);
+              firstBTCPrice = 0;
+              const resultBUY = await client.futuresOrder({
+                symbol: 'BTCUSDT',
+                side: 'BUY',
+                type: 'MARKET',
+                quantity:  0.004
+              });
+            }
             // Set up a timer to fetch the price every second (1000 milliseconds)
             intervalIdB = setInterval(fetchBTCUSDTPrice, 1000);
             currentTrade = 'BUY';
             break;
         case 'SELL':
             try{
-            //     const resultSELL = await client.submitNewOrder({
-            //     side: 'SELL',
-            //     symbol: 'BTCUSDT',
-            //     type: 'MARKET',
-            //     quantity: 0.001,
-            //     // newOrderRespType: 'FULL',
-            //   });
-              const resultSELL = await client.order({
+            const symbol = 'BTCUSDT';
+            // Get market price of the symbol
+            await getTickerPrice(symbol);
+            
+            if (currentTrade == ''){
+              const resultSELLFirst = await client.futuresOrder({
                 symbol: 'BTCUSDT',
                 side: 'SELL',
                 type: 'MARKET',
-                quantity:  0.001
+                quantity:  0.002
               });
+            }else{
+              clearInterval(intervalIdB);
+              firstBTCPrice = 0;
+              const resultSELL = await client.futuresOrder({
+                symbol: 'BTCUSDT',
+                side: 'SELL',
+                type: 'MARKET',
+                quantity:  0.004
+              });
+            }
             currentTrade = 'SELL';
                 // Set up a timer to fetch the price every second (1000 milliseconds)
             intervalIdS = setInterval(fetchBTCUSDTPrice, 1000);
