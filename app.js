@@ -90,6 +90,7 @@ let Btradevalue = 0;
 let BCurrentTrade = "";
 let BTradeLossper = 0;
 let BAbsoluteLoss = 0;
+let Tradex = 1;
 let BTradex = 1;
 let BLastCEValue = 0;
 let BLastPEValue = 0;
