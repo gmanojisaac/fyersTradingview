@@ -127,35 +127,27 @@ async function fetchBTCUSDTPrice() {
             firstBTCPrice = prices.BTCUSDT;
         }
         if (currentTrade == "BUY") {
-            // if (intervalIdS != 0){
-            //     clearInterval(intervalIdS);
-            //     intervalIdS = 0;
-            // }
-
             if (prices.BTCUSDT - firstBTCPrice > 1000) {
                 console.log("Exit BUY Trade with profit");
                 firstBTCPrice = 0;
+                // const resultBUY = await client
+                //     .futuresOrder({
+                //         symbol: "BTCUSDT",
+                //         side: "SELL",
+                //         type: "LIMIT",
+                //         quantity: tradequantity * tradeTimes,
+                //         price: Math.round(prices.BTCUSDT) - 60, // specify your limit price here
+                //         timeInForce: "GTC", // Good Till Canceled (other options: 'IOC', 'FOK')
+                //     })
+                //     .then((_) => {
+                //         tradeTimes = 1;
+                //         clearInterval(intervalIdB);
+                //     });
 
-                // const resultBUY = await client.futuresOrder({
-                //   symbol: 'BTCUSDT',
-                //   side: 'SELL',
-                //   type: 'MARKET',
-                //   quantity:  tradequantity * tradeTimes
-                // });
+                //remove
+                clearInterval(intervalIdB);
+                console.log( currentTrade + ' / ' + Math.round(prices.BTCUSDT));
                 currentTrade = "";
-                const resultBUY = await client
-                    .futuresOrder({
-                        symbol: "BTCUSDT",
-                        side: "SELL",
-                        type: "LIMIT",
-                        quantity: tradequantity * tradeTimes,
-                        price: Math.round(prices.BTCUSDT) - 60, // specify your limit price here
-                        timeInForce: "GTC", // Good Till Canceled (other options: 'IOC', 'FOK')
-                    })
-                    .then((_) => {
-                        tradeTimes = 1;
-                        clearInterval(intervalIdB);
-                    });
             } else {
                 console.log(
                     `The current price of BTC/USDT is: ${Number(prices.BTCUSDT).toFixed(
@@ -167,33 +159,26 @@ async function fetchBTCUSDTPrice() {
         }
 
         if (currentTrade == "SELL") {
-            // if (intervalIdB != 0){
-            //     clearInterval(intervalIdB);
-            //     intervalIdB = 0;
-            // }
             if (firstBTCPrice - prices.BTCUSDT > 1000) {
                 console.log("Exit SELL Trade with profit");
                 firstBTCPrice = 0;
-                // const resultSELL = await client.futuresOrder({
-                //   symbol: 'BTCUSDT',
-                //   side: 'BUY',
-                //   type: 'MARKET',
-                //   quantity:  tradequantity * tradeTimes
-                // });
+                // const resultSELL = await client
+                //     .futuresOrder({
+                //         symbol: "BTCUSDT",
+                //         side: "BUY",
+                //         type: "LIMIT",
+                //         quantity: tradequantity * tradeTimes,
+                //         price: Math.round(prices.BTCUSDT) + 60, // specify your limit price here
+                //         timeInForce: "GTC", // Good Till Canceled (other options: 'IOC', 'FOK')
+                //     })
+                //     .then((_) => {
+                //         tradeTimes = 1;
+                //         clearInterval(intervalIdS);
+                //     });
+                //remove
+                clearInterval(intervalIdS);
+                console.log( currentTrade + ' / ' + Math.round(prices.BTCUSDT));
                 currentTrade = "";
-                const resultSELL = await client
-                    .futuresOrder({
-                        symbol: "BTCUSDT",
-                        side: "BUY",
-                        type: "LIMIT",
-                        quantity: tradequantity * tradeTimes,
-                        price: Math.round(prices.BTCUSDT) + 60, // specify your limit price here
-                        timeInForce: "GTC", // Good Till Canceled (other options: 'IOC', 'FOK')
-                    })
-                    .then((_) => {
-                        tradeTimes = 1;
-                        clearInterval(intervalIdS);
-                    });
             } else {
                 console.log(
                     `The current price of BTC/USDT is: ${Number(prices.BTCUSDT).toFixed(
@@ -238,26 +223,28 @@ app.post("/submit-form", async (req, res) => {
             if (currentTrade == "") {
                 currentTrade = "BUY";
                 tradeTimes = 1;
-                const resultBUYFirst = await client.futuresOrder({
-                    symbol: "BTCUSDT",
-                    side: "BUY",
-                    type: "LIMIT",
-                    quantity: tradequantity * tradeTimes,
-                    price: Math.round(parseFloat(inputString.slice(-8))) + 60, // specify your limit price here
-                    timeInForce: "GTC", // Good Till Canceled (other options: 'IOC', 'FOK')
-                });
+                // const resultBUYFirst = await client.futuresOrder({
+                //     symbol: "BTCUSDT",
+                //     side: "BUY",
+                //     type: "LIMIT",
+                //     quantity: tradequantity * tradeTimes,
+                //     price: Math.round(parseFloat(inputString.slice(-8))) + 60, // specify your limit price here
+                //     timeInForce: "GTC", // Good Till Canceled (other options: 'IOC', 'FOK')
+                // });
+                console.log( currentTrade + ' / ' + inputString.slice(-8));
             } else {
                 clearInterval(intervalIdS);
                 firstBTCPrice = 0;
                 tradeTimes = 2;
-                const resultBUY = await client.futuresOrder({
-                    symbol: "BTCUSDT",
-                    side: "BUY",
-                    type: "LIMIT",
-                    quantity: tradequantity * tradeTimes,
-                    price: Math.round(parseFloat(inputString.slice(-8))) + 60, // specify your limit price here
-                    timeInForce: "GTC", // Good Till Canceled (other options: 'IOC', 'FOK')
-                });
+                // const resultBUY = await client.futuresOrder({
+                //     symbol: "BTCUSDT",
+                //     side: "BUY",
+                //     type: "LIMIT",
+                //     quantity: tradequantity * tradeTimes,
+                //     price: Math.round(parseFloat(inputString.slice(-8))) + 60, // specify your limit price here
+                //     timeInForce: "GTC", // Good Till Canceled (other options: 'IOC', 'FOK')
+                // });
+                console.log( currentTrade + ' / ' + inputString.slice(-8));
             }
             // Set up a timer to fetch the price every second (1000 milliseconds)
             intervalIdB = setInterval(fetchBTCUSDTPrice, 1000);
@@ -272,26 +259,28 @@ app.post("/submit-form", async (req, res) => {
                 if (currentTrade == "") {
                     currentTrade = "SELL";
                     tradeTimes = 1;
-                    const resultSELLFirst = await client.futuresOrder({
-                        symbol: "BTCUSDT",
-                        side: "SELL",
-                        type: "LIMIT",
-                        quantity: tradequantity * tradeTimes,
-                        price: Math.round(parseFloat(inputString.slice(-8))) - 60, // specify your limit price here
-                        timeInForce: "GTC", // Good Till Canceled (other options: 'IOC', 'FOK')
-                    });
+                    // const resultSELLFirst = await client.futuresOrder({
+                    //     symbol: "BTCUSDT",
+                    //     side: "SELL",
+                    //     type: "LIMIT",
+                    //     quantity: tradequantity * tradeTimes,
+                    //     price: Math.round(parseFloat(inputString.slice(-8))) - 60, // specify your limit price here
+                    //     timeInForce: "GTC", // Good Till Canceled (other options: 'IOC', 'FOK')
+                    // });
+                    console.log( currentTrade + ' / ' + inputString.slice(-8));
                 } else {
                     clearInterval(intervalIdB);
                     firstBTCPrice = 0;
                     tradeTimes = 2;
-                    const resultSELL = await client.futuresOrder({
-                        symbol: "BTCUSDT",
-                        side: "SELL",
-                        type: "LIMIT",
-                        quantity: tradequantity * tradeTimes,
-                        price: Math.round(parseFloat(inputString.slice(-8))) - 60, // specify your limit price here
-                        timeInForce: "GTC", // Good Till Canceled (other options: 'IOC', 'FOK')
-                    });
+                    // const resultSELL = await client.futuresOrder({
+                    //     symbol: "BTCUSDT",
+                    //     side: "SELL",
+                    //     type: "LIMIT",
+                    //     quantity: tradequantity * tradeTimes,
+                    //     price: Math.round(parseFloat(inputString.slice(-8))) - 60, // specify your limit price here
+                    //     timeInForce: "GTC", // Good Till Canceled (other options: 'IOC', 'FOK')
+                    // });
+                    console.log( currentTrade + ' / ' + inputString.slice(-8));
                 }
                 currentTrade = "SELL";
                 // Set up a timer to fetch the price every second (1000 milliseconds)
