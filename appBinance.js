@@ -2,14 +2,23 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const axios = require("axios");
 
-let currentTrade = '';
 let firstBTCPrice = 0;
+let currentTrade = "";
+let intervalIdB = 0;
+let intervalIdS = 0;
+let tradequantity = 0.002;
+let tradeTimes = 1;
 
 
 const Binance = require("binance-api-node").default;
+const apiKey =
+    "az28mFGG4ul5r112HSKIgisDgHV6CTq6AjuT5raFNVsko1ZGSjmBRB2sS4hDKgOX";
+const apiSecret =
+    "IYdTyi4jjyVDWF94KQ0ec9S9V7mykATX9PvazdAGkyqUOWMF5RyLxX4v6NPDaenh";
+
 const client = Binance({
-    apiKey: key,
-    apiSecret: secret,
+    apiKey: apiKey,
+    apiSecret: apiSecret,
     beautifyResponses: true,
   });
 
@@ -110,7 +119,7 @@ app.post("/submit-form", async (req, res) => {
     //console.log(await client.exchangeInfo())
     // Extract data from the request body
     const formData = req.body;
-    console.log("Received: ", formData);
+    //console.log("Received: ", formData);
     let inputString = String(formData);
     console.log(
         "command:",
@@ -120,10 +129,10 @@ app.post("/submit-form", async (req, res) => {
         inputString.slice(-8)
     );
     switch (inputString.split(" ")[0]) {
-        case "BUY":
+        case 'BUY':
             if (currentTrade == "") {//do it first time
                 currentTrade = "BUY";
-                tradeTimes = 1;
+                tradeTimes = 1;                
                 const resultBUYFirst = await client.futuresOrder({
                     symbol: "BTCUSDT",
                     side: "BUY",
@@ -151,15 +160,12 @@ app.post("/submit-form", async (req, res) => {
             intervalIdB = setInterval(fetchBTCUSDTPrice, 1000);
             currentTrade = "BUY";
             break;
-        case "SELL":
-            try {
-                const symbol = "BTCUSDT";
-                // Get market price of the symbol
-                await getTickerPrice(symbol);
-
+        case 'SELL':
+                console.log('REACHED');
                 if (currentTrade == "") {
                     currentTrade = "SELL";
                     tradeTimes = 1;
+                    console.log('Amt:', Math.round(parseFloat(inputString.slice(-8))) - 50);
                     const resultSELLFirst = await client.futuresOrder({
                         symbol: "BTCUSDT",
                         side: "SELL",
@@ -186,9 +192,6 @@ app.post("/submit-form", async (req, res) => {
                 currentTrade = "SELL";
                 // Set up a timer to fetch the price every second (1000 milliseconds)
                 intervalIdS = setInterval(fetchBTCUSDTPrice, 1000);
-            } catch (error) {
-                console.error("Error Making trade:", error);
-            }
             break;
     }
 
