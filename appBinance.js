@@ -54,7 +54,7 @@ async function fetchBTCUSDTPrice() {
             firstBTCPrice = prices.BTCUSDT;
         }
         if (currentTrade == "BUY") {
-            if (prices.BTCUSDT - firstBTCPrice > 500) {
+            if (prices.BTCUSDT - firstBTCPrice > 200) {
                 console.log("Exit BUY Trade with profit");
                 firstBTCPrice = 0;
                 const resultBUY = await client
@@ -86,7 +86,7 @@ async function fetchBTCUSDTPrice() {
         }
 
         if (currentTrade == "SELL") {
-            if (firstBTCPrice - prices.BTCUSDT > 500) {
+            if (firstBTCPrice - prices.BTCUSDT > 200) {
                 console.log("Exit SELL Trade with profit");
                 firstBTCPrice = 0;
                 const resultSELL = await client
