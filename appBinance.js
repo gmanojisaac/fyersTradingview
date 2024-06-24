@@ -6,7 +6,7 @@ let firstBTCPrice = 0;
 let currentTrade = "";
 let intervalIdB = 0;
 let intervalIdS = 0;
-let tradequantity = 0.02;
+let tradequantity = 0.01;
 let tradeTimes = 1;
 let noofswitches = 1;
 
@@ -54,17 +54,17 @@ async function fetchBTCUSDTPrice() {
             firstBTCPrice = prices.BTCUSDT;
         }
         if (currentTrade == "BUY") {
-            if (prices.BTCUSDT - firstBTCPrice > 200) {
+            if (prices.BTCUSDT - firstBTCPrice > 1000) {
                 console.log("Exit BUY Trade with profit");
                 firstBTCPrice = 0;
                 const resultBUY = await client
                     .futuresOrder({
                         symbol: "BTCUSDT",
                         side: "SELL",
-                        type: "LIMIT",
+                        type: "MARKET",
                         quantity: tradequantity * tradeTimes,
-                        price: Math.round(prices.BTCUSDT) - 50, // specify your limit price here
-                        timeInForce: "GTC", // Good Till Canceled (other options: 'IOC', 'FOK')
+                        // price: Math.round(prices.BTCUSDT) - 50, // specify your limit price here
+                        // timeInForce: "GTC", // Good Till Canceled (other options: 'IOC', 'FOK')
                     })
                     .then((_) => {
                         tradeTimes = 1;
@@ -86,17 +86,17 @@ async function fetchBTCUSDTPrice() {
         }
 
         if (currentTrade == "SELL") {
-            if (firstBTCPrice - prices.BTCUSDT > 200) {
+            if (firstBTCPrice - prices.BTCUSDT > 1000) {
                 console.log("Exit SELL Trade with profit");
                 firstBTCPrice = 0;
                 const resultSELL = await client
                     .futuresOrder({
                         symbol: "BTCUSDT",
                         side: "BUY",
-                        type: "LIMIT",
+                        type: "MARKET",
                         quantity: tradequantity * tradeTimes,
-                        price: Math.round(prices.BTCUSDT) + 50, // specify your limit price here
-                        timeInForce: "GTC", // Good Till Canceled (other options: 'IOC', 'FOK')
+                        // price: Math.round(prices.BTCUSDT) + 50, // specify your limit price here
+                        // timeInForce: "GTC", // Good Till Canceled (other options: 'IOC', 'FOK')
                     })
                     .then((_) => {
                         tradeTimes = 1;
@@ -149,10 +149,10 @@ app.post("/submit-form", async (req, res) => {
                 const resultBUYFirst = await client.futuresOrder({
                     symbol: "BTCUSDT",
                     side: "BUY",
-                    type: "LIMIT",
+                    type: "MARKET",
                     quantity: tradequantity * tradeTimes,
-                    price: Math.round(parseFloat(inputString.slice(-8))) + 50, // specify your limit price here
-                    timeInForce: "GTC", // Good Till Canceled (other options: 'IOC', 'FOK')
+                    // price: Math.round(parseFloat(inputString.slice(-8))) + 50, // specify your limit price here
+                    // timeInForce: "GTC", // Good Till Canceled (other options: 'IOC', 'FOK')
                 });
                 console.log( currentTrade + ' / ' + inputString.slice(-8));
                 intervalIdB = setInterval(fetchBTCUSDTPrice, 1000);
@@ -165,10 +165,10 @@ app.post("/submit-form", async (req, res) => {
                     const resultBUY = await client.futuresOrder({
                         symbol: "BTCUSDT",
                         side: "BUY",
-                        type: "LIMIT",
+                        type: "MARKET",
                         quantity: tradequantity * tradeTimes,
-                        price: Math.round(parseFloat(inputString.slice(-8))) + 50, // specify your limit price here
-                        timeInForce: "GTC", // Good Till Canceled (other options: 'IOC', 'FOK')
+                        // price: Math.round(parseFloat(inputString.slice(-8))) + 50, // specify your limit price here
+                        // timeInForce: "GTC", // Good Till Canceled (other options: 'IOC', 'FOK')
                     });
                     console.log( currentTrade + ' / ' + inputString.slice(-8));
                     intervalIdB = setInterval(fetchBTCUSDTPrice, 1000);
@@ -193,10 +193,10 @@ app.post("/submit-form", async (req, res) => {
                     const resultSELLFirst = await client.futuresOrder({
                         symbol: "BTCUSDT",
                         side: "SELL",
-                        type: "LIMIT",
+                        type: "MARKET",
                         quantity: tradequantity * tradeTimes,
-                        price: Math.round(parseFloat(inputString.slice(-8))) - 50, // specify your limit price here
-                        timeInForce: "GTC", // Good Till Canceled (other options: 'IOC', 'FOK')
+                        // price: Math.round(parseFloat(inputString.slice(-8))) - 50, // specify your limit price here
+                        // timeInForce: "GTC", // Good Till Canceled (other options: 'IOC', 'FOK')
                     });
                     console.log( currentTrade + ' / ' + inputString.slice(-8));
                     currentTrade = "SELL";
@@ -210,10 +210,10 @@ app.post("/submit-form", async (req, res) => {
                     const resultSELL = await client.futuresOrder({
                         symbol: "BTCUSDT",
                         side: "SELL",
-                        type: "LIMIT",
+                        type: "MARKET",
                         quantity: tradequantity * tradeTimes,
-                        price: Math.round(parseFloat(inputString.slice(-8))) - 50, // specify your limit price here
-                        timeInForce: "GTC", // Good Till Canceled (other options: 'IOC', 'FOK')
+                        // price: Math.round(parseFloat(inputString.slice(-8))) - 50, // specify your limit price here
+                        // timeInForce: "GTC", // Good Till Canceled (other options: 'IOC', 'FOK')
                     });
                     console.log( currentTrade + ' / ' + inputString.slice(-8));
                     currentTrade = "SELL";
