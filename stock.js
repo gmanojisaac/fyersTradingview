@@ -3,18 +3,24 @@ const bodyParser = require('body-parser')
 const axios = require('axios')
 const apiKey = 'k8jfisczsz5bsbff'
 const apiSecret = 'kpahn5pws8ccvsamxyuxeb0z2l0dwppb'
-const requestToken = '1pGD06Z4ymXNjWb84TvOkXZsKI93jzJG' //Replace Everyday
+const requestToken = 'bwLdHxMR50fyqhnmorlmCkoWzVzK5I1I' //Replace Everyday
 //https://kite.trade/connect/login?v=3&api_key=k8jfisczsz5bsbff
 
-let accessToken = 'yCO3LgTf10tdoZZ2hXWyoyRWJHsBQbeE' //Replace Everyday, Remove it and run the program to get the access token
+let accessToken = 'm44IKi9Nuf92mF0dNr78iHyO8pRHFlOz' //Replace Everyday, Remove it and run the program to get the access token
 
 let GenericTagCE = 'BANKNIFTY2470352500CE' //Replace Friday - Jun 21
 let GenericTagPE = 'BANKNIFTY2470352600CE' //Replace Friday - Jun 21
 let BGenericTagCEPE = 'BANKNIFTY24703' //Replace thursday - Jun 27
+let GenericTag = 'JUBLFOOD';
 let BNiftyCE = ""
 let BNiftyPE = ""
 let NiftyCE = ""
 let NiftyPE = ""
+
+let Nifty = ""
+let NiftyS = ""
+let SNifty = ""
+let TNifty = ""
 
 let NiftyCES = ""
 let NiftyPES = ""
@@ -82,7 +88,7 @@ const app = express()
 app.use(bodyParser.text())
 
 // Start the server
-const PORT = process.env.PORT || 3200
+const PORT = process.env.PORT || 4000
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`)
 })
@@ -196,57 +202,65 @@ function onTicks (ticks) {
     // }
 
     if (NiftyCE != "") { //BUY HAS COME from tradingview
-      if (LNiftyCES != "") {//Already PE trade         //switch trade         //exit profit or loss - switch trade
-        if (NiftyCES !== "") {
-          SNiftyCES = tick.last_price - slip;
-          placeLimitOrder( 'NFO', NiftyCES, minqnty * Tradex, SNiftyCES, kite.TRANSACTION_TYPE_SELL)
-          removeticker(NiftyCES);
-          console.log(`Remove for ${tick.instrument_token}: ${tick.last_price}`, " entered : ", TNiftyPE, " Exited at : ",SNiftyPE); 
-          NiftyCES = ""
-          TBNiftyCES = 0;
-        }
+      if (LNiftyCE != "") {//Already PE trade         //switch trade         //exit profit or loss - switch trade
+        //if (NiftyCE !== "") {
+          SNiftyPE = tick.last_price - slip;
+          console.log(`Exit Trade for ${tick.instrument_token}: ${tick.last_price}`, " Entered CE : ", TNiftyCE, " Exited at : ",SNiftyCE, ' P&L : ', Math.round( SNiftyCE - TNiftyCE) ); 
+          NiftyPE = NiftyCE;
+          placeLimitOrder( 'NSE', NiftyPE, 2 * minqnty * Tradex, SNiftyCE, kite.TRANSACTION_TYPE_SELL);
+          //removeticker(NiftyCE);
+          LNiftyCE = "";
+          NiftyCE = "";
+          TNiftyCE = 0;
+          TNiftyPE = SNiftyPE;
+        //}
       } else { //First Time BUY
         if (TNiftyCE == 0) {
           TNiftyCE = tick.last_price + slip;
-          placeLimitOrder('NFO',NiftyCE,minqnty * Tradex,TNiftyCE,kite.TRANSACTION_TYPE_BUY)
+          placeLimitOrder('NSE',NiftyCE,minqnty * Tradex,TNiftyCE,kite.TRANSACTION_TYPE_BUY)
           console.log(`Enter for ${tick.instrument_token}: ${tick.last_price}`, " entered : ", TNiftyCE); 
         } else { //CHECK FOR PROFIT
-          if (tick.last_price > TNiftyCE * 1.13) {
+          if (tick.last_price > TNiftyCE * 1.012) {
             SNiftyCE = tick.last_price - slip; //used for adding profit
-            placeLimitOrder('NFO',NiftyCE,minqnty * Tradex,SNiftyCE,kite.TRANSACTION_TYPE_SELL);
+            placeLimitOrder('NSE',NiftyCE,minqnty * Tradex,SNiftyCE,kite.TRANSACTION_TYPE_SELL);
             removeticker(NiftyCE);
-            NiftyCE = "";
-            TNiftyCE = 0;
+   
             console.log(`Profit for ${tick.instrument_token}: ${tick.last_price}`, " entered : ", TNiftyCE, " Exited at : ",SNiftyCE); 
-          }else{
+            NiftyCE = "";
+            TNiftyCE = 0;  
+        }else{
             console.log(`In Trade for ${tick.instrument_token}: ${tick.last_price}`, " entered : ", TNiftyCE);
           }
         }
       }
     }
     if (NiftyPE != "") { //BUY HAS COME from tradingview
-        if (LNiftyPES != "") {//Already PE trade         //switch trade         //exit profit or loss - switch trade
-          if (NiftyPES !== "") {
-            SNiftyPES = tick.last_price - slip,
-            placeLimitOrder( 'NFO', NiftyPES, minqnty * Tradex, SNiftyPES, kite.TRANSACTION_TYPE_SELL);
-            removeticker(NiftyPES);
-            console.log(`Remove for ${tick.instrument_token}: ${tick.last_price}`, " entered : ", TNiftyCE, " Exited at : ",SNiftyCE);             
-            NiftyPES = ""
-            TNiftyPES = 0;
-          } 
+        if (LNiftyPE != "") {//Already PE trade         //switch trade         //exit profit or loss - switch trade
+          //if (NiftyPES !== "") {
+            SNiftyCE = tick.last_price - slip,
+            console.log(`Exit Trade for ${tick.instrument_token}: ${tick.last_price}`, " Entered PE : ", TNiftyPE, " Exited at : ",SNiftyPE , ' P&L : ', Math.round( SNiftyPE - TNiftyPE) );         
+            NiftyCE = NiftyPE;
+            placeLimitOrder( 'NSE', NiftyPE, 2 * minqnty * Tradex, SNiftyPE, kite.TRANSACTION_TYPE_BUY);
+            //removeticker(NiftyPES);
+            LNiftyPE = "";
+            NiftyPE = ""
+            TNiftyPE = 0;
+            TNiftyCE = SNiftyCE;
+          //} 
         } else { //First Time BUY
           if (TNiftyPE == 0) {
             TNiftyPE = tick.last_price + slip;
-            placeLimitOrder('NFO',NiftyPE,minqnty * Tradex,TNiftyPE,kite.TRANSACTION_TYPE_BUY);
+            placeLimitOrder('NSE',NiftyPE,minqnty * Tradex,TNiftyPE,kite.TRANSACTION_TYPE_SELL);
             console.log(`Enter for ${tick.instrument_token}: ${tick.last_price}`, " entered : ", TNiftyPE); 
           } else { //CHECK FOR PROFIT
-            if (tick.last_price > TNiftyPE * 2.0) {
+            if (tick.last_price > TNiftyPE * 1.012) {
               SNiftyPE = tick.last_price - slip; //used for adding profit
-              placeLimitOrder('NFO',NiftyPE,minqnty * Tradex,SNiftyPE,kite.TRANSACTION_TYPE_SELL);
+              placeLimitOrder('NSE',NiftyPE,minqnty * Tradex,SNiftyPE,kite.TRANSACTION_TYPE_BUY);
               removeticker(NiftyPE);
+
+              console.log(`Profit for ${tick.instrument_token}: ${tick.last_price}`, " entered : ", TNiftyPE, " Exited at : ",SNiftyPE); 
               TNiftyPE = 0;
               NiftyPE = "";
-              console.log(`Profit for ${tick.instrument_token}: ${tick.last_price}`, " entered : ", TNiftyPE, " Exited at : ",SNiftyPE); 
             }else{
               console.log(`In Trade for ${tick.instrument_token}: ${tick.last_price}`, " entered : ", TNiftyPE);
             }
@@ -254,6 +268,32 @@ function onTicks (ticks) {
         }
     }
 
+    // if (Nifty != "") { //BUY HAS COME from tradingview
+    //     if (NiftyS != "") {//Already PE trade         //switch trade         //exit profit or loss - switch trade
+    //         SNifty = tick.last_price - slip;
+    //         placeLimitOrder( 'NSE', Nifty, minqnty * Tradex, SNifty, kite.TRANSACTION_TYPE_SELL);
+    //         removeticker(Nifty);
+    //         console.log(`Exit for ${tick.instrument_token}: ${tick.last_price}`, " entered : ", TNifty, " Exited at : ",SNifty); 
+    //         Nifty = "";          
+    //     } else { //First Time BUY
+    //       if (TNifty == 0) {
+    //         TNifty = tick.last_price + slip;
+    //         placeLimitOrder('NSE',Nifty,minqnty * Tradex,TNifty,kite.TRANSACTION_TYPE_BUY)
+    //         console.log(`Enter for ${tick.instrument_token}: ${tick.last_price}`, " entered : ", TNifty); 
+    //       } else { //CHECK FOR PROFIT
+    //         if (tick.last_price > TNifty * 1.013) {
+    //           SNifty = tick.last_price - slip; //used for adding profit
+    //           placeLimitOrder('NSE',Nifty,minqnty * Tradex,SNifty,kite.TRANSACTION_TYPE_SELL);
+    //           removeticker(Nifty);
+    //           console.log(`Profit for ${tick.instrument_token}: ${tick.last_price}`, " entered : ", TNifty, " Exited at : ",SNifty); 
+    //           Nifty = "";
+    //           TNifty = 0;
+    //         }else{
+    //           console.log(`In Trade for ${tick.instrument_token}: ${tick.last_price}`, " entered : ", TNifty);
+    //         }
+    //       }
+    //     }
+    // }
 
   // if (BNiftyCE != "") { //BUY HAS COME from tradingview
   //     if (LBNiftyPE != "") {//Already PE trade         //switch trade         //exit profit or loss - switch trade
@@ -386,7 +426,7 @@ function placeLimitOrder (
 }
 
 function addticker (symbol) {
-  kite.getInstruments('NFO').then(instruments => {
+  kite.getInstruments('NSE').then(instruments => {
     // Find the specific Nifty option
     //const tradingsymbol = "NIFTY2462023500CE"; // Example symbol, replace with your desired symbol
     console.log(symbol);
@@ -408,7 +448,7 @@ function addticker (symbol) {
 }
 
 function removeticker (symbol) {
-  kite.getInstruments('NFO').then(instruments => {
+  kite.getInstruments('NSE').then(instruments => {
     // Find the specific Nifty option
     //const tradingsymbol = "NIFTY2462023500CE"; // Example symbol, replace with your desired symbol
     const instrument = instruments.find(inst => inst.tradingsymbol === symbol);
@@ -440,33 +480,53 @@ app.post('/submit-form', async (req, res) => {
     inputString.slice(-8)
   )
   switch (inputString.split(' ')[0]) {
-    case 'BUYNIFTY':
-      if (NiftyPE != "") { //BUY comes after SELL
+    case 'BJUBL':
+      if (LNiftyPE == "" && NiftyPE != "" ) { //BUY comes after SELL
         LNiftyPE = NiftyPE; //save the symbol for switch trade and exit PE trade
         //NiftyCE = GenericTagCEPE + (parseInt(inputString.slice(-8)) - (parseInt(inputString.slice(-8)) % 50)) + 'CE'; //  what trade needs to be switched
-      } else {
+        console.log('LNiftyPE : ', LNiftyPE);  
+    } else {
         if (NiftyCE == "" ){//First Time
           //NiftyCE = GenericTagCEPE + (parseInt(inputString.slice(-8)) - (parseInt(inputString.slice(-8)) % 50)) + 'CE'; //  what trade needs to be switched
-          NiftyCE = GenericTagCE; //  what trade needs to be switched
+          NiftyCE = GenericTag; //  what trade needs to be switched
           addticker(NiftyCE);
+          console.log('Updated NiftyCE : ', NiftyCE);
         }
       }
 
 
-      break
-    case 'SELLNIFTY':
-      if (LNiftyCE != "") { //holds the symbol and not started
+      break;
+    case 'SJUBL':
+      if (LNiftyCE == "" && NiftyCE != "") { //holds the symbol and not started
         LNiftyCE = NiftyCE; //save the symbol for switch trade
+        console.log('LNiftyCE : ', LNiftyCE);
         //NiftyPE = GenericTagCEPE + (parseFloat(inputString.slice(-8)) - (parseFloat(inputString.slice(-8)) % 50)) + 'PE'; //  what trade needs to be switched
       } else {
         if (NiftyPE == "" ){
         //NiftyPE = GenericTagCEPE + (parseFloat(inputString.slice(-8)) - (parseFloat(inputString.slice(-8)) % 50)) + 'PE'; //  what trade needs to be switched
-        NiftyPE = GenericTagPE; //  what trade needs to be switched
+        NiftyPE = GenericTag; //  what trade needs to be switched
         addticker(NiftyPE);
+        console.log('Updated NiftyPE : ', NiftyPE);
         }
       }
       break;
     
+    
+    // case 'BJUBL':
+    //     if (Nifty == "" ){//First Time
+    //         Nifty = GenericTag; //  what trade needs to be switched
+    //         addticker(Nifty);
+    //         NiftyS = "";
+    //       }
+    //     break;
+    // case 'SJUBL':
+    //     if (Nifty != "" ){
+    //         NiftyS = GenericTag;
+    //         removeticker(Nifty);
+    //         }
+    // break;
+
+
     // case 'BUYBNIFTY':
     //   if (BNiftyPE != "") { //holds the symbol and not started
     //     LBNiftyPE = BNiftyPE; //save the symbol for switch trade and exit PE trade
@@ -491,17 +551,14 @@ app.post('/submit-form', async (req, res) => {
       
       
       
-      
-      }
-    
 
-    //   case 'BUYNIFTYC':
+    //   case 'BJUBL':
     //     if (NiftyCES != "") { //BUY comes after SELL
     //       LNiftyCES = NiftyCES; //save the symbol for switch trade and exit PE trade
     //       //NiftyCE = GenericTagCEPE + (parseInt(inputString.slice(-8)) - (parseInt(inputString.slice(-8)) % 50)) + 'CE'; //  what trade needs to be switched
     //     }
     //   break
-    // case 'SELLNIFTYC':
+    // case 'SJUBL':
     //   if (LNiftyPES != "") { //holds the symbol and not started
     //     LNiftyPES = NiftyPES; //save the symbol for switch trade
     //     //NiftyPE = GenericTagCEPE + (parseFloat(inputString.slice(-8)) - (parseFloat(inputString.slice(-8)) % 50)) + 'PE'; //  what trade needs to be switched
@@ -534,7 +591,7 @@ app.post('/submit-form', async (req, res) => {
       
       
     //   }
-    //}
+    }
 
   // Process the form data (here, just sending it back as a response)
   res.json({ message: 'Form submitted successfully', formData })
